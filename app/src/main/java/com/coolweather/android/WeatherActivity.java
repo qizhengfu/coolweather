@@ -1,5 +1,6 @@
 package com.coolweather.android;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -23,6 +24,7 @@ import com.bumptech.glide.Glide;
 import com.coolweather.android.gson.Basic;
 import com.coolweather.android.gson.Forecast;
 import com.coolweather.android.gson.Weather;
+import com.coolweather.android.service.AutoUpdateService;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
 
@@ -189,51 +191,56 @@ public class WeatherActivity extends AppCompatActivity {
     }
     //处理显示Weather实体类中的数据
     private void showWeatherInfo(Weather weather) {
-        String cityName=weather.basic.cityName;
-        String updateTime=weather.basic.update.updateTime.split(" ")[1];
-        String degree=weather.now.temperature+"℃";
-        String weatherInfo=weather.now.more.info;
-        Log.d("WeatherActivity", "cityName: "+cityName);
-        titleCity.setText(cityName);
-        Log.d("WeatherActivity", "updateTime: "+updateTime);
-        titleUpdateTime.setText(updateTime);
-        Log.d("WeatherActivity", "degree: "+degree);
-        degreeText.setText(degree);
-        Log.d("WeatherActivity", "weatherInfo: "+weatherInfo);
-        weatherInfoText.setText(weatherInfo);
-        forecastLayout.removeAllViews();
-        for(Forecast forecast:weather.forecastList)
-        {
-            Log.d("WeatherActivity", "开始展示几天后的数据");
-            View view= LayoutInflater.from(this).inflate(R.layout.forecast_item,forecastLayout,false);
+        if(weather!=null&&"ok".equals(weather.status)) {
+            String cityName = weather.basic.cityName;
+            String updateTime = weather.basic.update.updateTime.split(" ")[1];
+            String degree = weather.now.temperature + "℃";
+            String weatherInfo = weather.now.more.info;
+            Log.d("WeatherActivity", "cityName: " + cityName);
+            titleCity.setText(cityName);
+            Log.d("WeatherActivity", "updateTime: " + updateTime);
+            titleUpdateTime.setText(updateTime);
+            Log.d("WeatherActivity", "degree: " + degree);
+            degreeText.setText(degree);
+            Log.d("WeatherActivity", "weatherInfo: " + weatherInfo);
+            weatherInfoText.setText(weatherInfo);
+            forecastLayout.removeAllViews();
+            for (Forecast forecast : weather.forecastList) {
+                Log.d("WeatherActivity", "开始展示几天后的数据");
+                View view = LayoutInflater.from(this).inflate(R.layout.forecast_item, forecastLayout, false);
 
-            TextView dateText=(TextView)view.findViewById(R.id.date_text);
-            TextView infoText=(TextView)view.findViewById(R.id.info_text);
-            TextView maxText=(TextView)view.findViewById(R.id.max_text);
-            TextView minText=(TextView)view.findViewById(R.id.min_text);
-            Log.d("WeatherActivity", "dateText: "+forecast.date);
-            dateText.setText(forecast.date);
-            Log.d("WeatherActivity", "infoText: "+forecast.more.info);
-            infoText.setText(forecast.more.info);
-            Log.d("WeatherActivity", "maxText: "+forecast.temperature.max);
-            maxText.setText(forecast.temperature.max);
-            Log.d("WeatherActivity", "minText: "+forecast.temperature.min);
-            minText.setText(forecast.temperature.min);
-            forecastLayout.addView(view);
+                TextView dateText = (TextView) view.findViewById(R.id.date_text);
+                TextView infoText = (TextView) view.findViewById(R.id.info_text);
+                TextView maxText = (TextView) view.findViewById(R.id.max_text);
+                TextView minText = (TextView) view.findViewById(R.id.min_text);
+                Log.d("WeatherActivity", "dateText: " + forecast.date);
+                dateText.setText(forecast.date);
+                Log.d("WeatherActivity", "infoText: " + forecast.more.info);
+                infoText.setText(forecast.more.info);
+                Log.d("WeatherActivity", "maxText: " + forecast.temperature.max);
+                maxText.setText(forecast.temperature.max);
+                Log.d("WeatherActivity", "minText: " + forecast.temperature.min);
+                minText.setText(forecast.temperature.min);
+                forecastLayout.addView(view);
+            }
+            if (weather.aqi != null) {
+                Log.d("WeatherActivity", "开始展示AQI和PM25");
+                aqiText.setText(weather.aqi.city.aqi);
+                pm25Text.setText(weather.aqi.city.pm25);
+            }
+            Log.d("WeatherActivity", "开始展示建议");
+            String comfort = "舒适度：" + weather.suggestion.comfort.info;
+            String carwash = "洗车指数：" + weather.suggestion.carWash.info;
+            String sport = "运动建议：" + weather.suggestion.sport.info;
+            comfortText.setText(comfort);
+            carWashText.setText(carwash);
+            sportText.setText(sport);
+            weatherLayout.setVisibility(View.VISIBLE);
+            Intent intent=new Intent(this, AutoUpdateService.class);
+            startService(intent);
         }
-        if(weather.aqi!=null)
-        {
-            Log.d("WeatherActivity", "开始展示AQI和PM25");
-            aqiText.setText(weather.aqi.city.aqi);
-            pm25Text.setText(weather.aqi.city.pm25);
+        else {
+            Toast.makeText(WeatherActivity.this,"获取天气信息失败",Toast.LENGTH_SHORT).show();
         }
-        Log.d("WeatherActivity", "开始展示建议");
-        String comfort="舒适度："+weather.suggestion.comfort.info;
-        String carwash="洗车指数："+weather.suggestion.carWash.info;
-        String sport="运动建议："+weather.suggestion.sport.info;
-        comfortText.setText(comfort);
-        carWashText.setText(carwash);
-        sportText.setText(sport);
-        weatherLayout.setVisibility(View.VISIBLE);
     }
 }
